@@ -1,0 +1,58 @@
+name: Atualizar Dados do TSE
+
+on:
+  # Roda automaticamente a cada 12 horas
+  schedule:
+    - cron: '0 */12 * * *'  # Às 00:00 e 12:00 UTC
+  
+  # Permite rodar manualmente pelo botão "Run workflow"
+  workflow_dispatch:
+
+# Permissão para fazer push no repositório
+permissions:
+  contents: write
+
+jobs:
+  atualizar-dados:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+        with:
+          # Necessário para o git push funcionar
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+      
+      - name: Instalar dependências
+        run: pip install -r requirements.txt
+      
+      - name: Rodar script de processamento
+        run: python scripts/processar_tse.py
+      
+      - name: Verificar se há mudanças
+        id: git-check
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add dados/
+          
+          # Verifica se há mudanças para commitar
+          if git diff --staged --quiet; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "Nenhuma mudança detectada."
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "Mudanças detectadas. Preparando commit..."
+          fi
+      
+      - name: Commit e Push das mudanças
+        if: steps.git-check.outputs.changed == 'true'
+        run: |
+          git commit -m "Atualização automática de dados do TSE - $(date +'%Y-%m-%d %H:%M')"
+          git push

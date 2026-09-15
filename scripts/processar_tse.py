@@ -35,9 +35,20 @@ MAPEAMENTO_CARGOS = {
     "SENADOR": "SENADOR",
     "GOVERNADOR": "GOVERNADOR",
     "PRESIDENTE": "PRESIDENTE",
+    "PREFEITO": "PREFEITO",
+    "VEREADOR": "VEREADOR",
 }
 
-SITUACOES_VALIDAS = ["DEFERIDO", "INDEFERIDO COM RECURSO", "CADASTRADO", "AGUARDANDO JULGAMENTO"]
+# Situações mais amplas para capturar candidatos em fase de registro
+SITUACOES_VALIDAS = [
+    "DEFERIDO", 
+    "INDEFERIDO COM RECURSO", 
+    "CADASTRADO", 
+    "AGUARDANDO JULGAMENTO",
+    "REGISTRO",
+    "APTO",
+    "REGISTRADO"
+]
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -60,7 +71,6 @@ def detectar_ano_mais_recente() -> str:
         except:
             continue
     
-    # Fallback: retorna o ano atual se não conseguir detectar
     logger.warning("Não foi possível detectar ano. Usando ano atual.")
     return str(ano_atual)
 
@@ -68,10 +78,12 @@ def detectar_ano_mais_recente() -> str:
 def detectar_tipo_eleicao(ano: str) -> str:
     """Detecta se é eleição geral ou municipal."""
     ano_int = int(ano)
+    # Eleições municipais: 2020, 2024, 2028... (ano % 4 == 0)
+    # Eleições gerais: 2022, 2026, 2030... (ano % 4 == 2)
     if ano_int % 4 == 0:
-        return "Eleições Gerais"
-    else:
         return "Eleições Municipais"
+    else:
+        return "Eleições Gerais"
 
 
 def baixar_arquivo(url: str, destino: Path) -> bool:
@@ -165,10 +177,21 @@ def processar_uf(uf: str, ano: str) -> dict:
     if not candidatos_raw:
         return {}
     
+    # Log para debug: mostrar quais situações existem
+    situacoes_encontradas = set()
+    for c in candidatos_raw:
+        situacoes_encontradas.add(c.get("DS_SITUACAO_CANDIDATURA", "").upper())
+    logger.info(f"{uf}: Situações encontradas: {situacoes_encontradas}")
+    
     candidatos_validos = [
         c for c in candidatos_raw
         if c.get("DS_SITUACAO_CANDIDATURA", "").upper() in SITUACOES_VALIDAS
     ]
+    logger.info(f"{uf}: {len(candidatos_validos)} candidatos válidos de {len(candidatos_raw)} totais.")
+    
+    if len(candidatos_validos) == 0:
+        logger.warning(f"{uf}: Nenhum candidato válido encontrado. Usando todos os candidatos.")
+        candidatos_validos = candidatos_raw
     
     agrupados = defaultdict(lambda: defaultdict(list))
     for cand in candidatos_validos:
@@ -226,7 +249,7 @@ def processar_uf(uf: str, ano: str) -> dict:
                     "partido": titular.get("SG_PARTIDO", "")
                 }
                 
-                if cargo_tse in ["GOVERNADOR", "PRESIDENTE"] and dados_chapa["complementares"]:
+                if cargo_tse in ["GOVERNADOR", "PRESIDENTE", "PREFEITO"] and dados_chapa["complementares"]:
                     registro["vice"] = dados_chapa["complementares"][0].get("NM_URNA_CANDIDATO", "")
                 
                 lista_cargos.append(registro)
@@ -239,7 +262,6 @@ def processar_uf(uf: str, ano: str) -> dict:
 def main():
     logger.info("Iniciando processamento de dados do TSE...")
     
-    # Detecta automaticamente o ano mais recente
     ano = detectar_ano_mais_recente()
     tipo_eleicao = detectar_tipo_eleicao(ano)
     
@@ -257,7 +279,6 @@ def main():
             logger.error(f"Erro crítico ao processar {uf}: {e}")
             continue
     
-    # Adiciona metadados
     dados_finais["info"] = {
         "ano": ano,
         "tipo": tipo_eleicao,
@@ -268,6 +289,13 @@ def main():
         json.dump(dados_finais, f, ensure_ascii=False, indent=2)
     
     logger.info(f"Arquivo {ARQUIVO_JSON} gerado com sucesso!")
+    
+    total_candidatos = sum(
+        sum(len(v) for v in uf_data.values())
+        for uf_data in dados_finais.values()
+        if isinstance(uf_data, dict)
+    )
+    logger.info(f"Total de candidatos registrados: {total_candidatos}")
 
 
 if __name__ == "__main__":

@@ -41,22 +41,41 @@
             padding: 20px;
             border-radius: 10px;
             text-align: center;
+
+
         }
-        .ui-screen h2 { color: var(--urna-yellow); margin-top: 0; }
-            .ui-screen h2 { 
+            
+          .ui-screen h2 { 
         color: var(--urna-yellow); 
-        margin-top: 0; 
+        margin: 0 0 2px 0; /* Espaço mínimo abaixo do título */
     }
     
     .dev-credit {
         color: var(--urna-yellow);
-        font-size: 1.1em; /* Aproximadamente 50% do tamanho do título principal */
-        margin-top: -8px;
-        margin-bottom: 18px;
+        font-size: 0.9em; /* Tamanho legível, nem grande nem pequeno demais */
+        margin: 0 0 4px 0; /* Espaço mínimo abaixo do seu nome */
         text-align: center;
         font-family: 'Courier New', Courier, monospace;
         opacity: 0.9;
     }
+
+    #info-eleicao {
+        margin: 2px 0;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    .ui-screen p {
+        margin: 3px 0; /* <-- ISSO diminui drasticamente o espaço entre os parágrafos */
+    }
+
+    .ui-screen label {
+        margin: 3px 0; /* <-- ISSO cola o texto "Selecione seu Estado:" na caixa de seleção */
+        display: block;
+    }
+
+
+        
         .ui-screen button {
             background: var(--btn-confirma);
             color: white;

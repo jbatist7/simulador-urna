@@ -1,0 +1,34 @@
+{
+  "info": {
+    "ano": "2026",
+    "tipo": "Eleições Gerais",
+    "atualizado_em": "2026-09-15T21:30:00"
+  },
+  "PE": {
+    "DEP_FEDERAL": [
+      { "numero": "1313", "nome": "CANDIDATO FEDERAL 1", "partido": "PT" },
+      { "numero": "2222", "nome": "CANDIDATO FEDERAL 2", "partido": "PL" },
+      { "numero": "4545", "nome": "CANDIDATO FEDERAL 3", "partido": "PSDB" }
+    ],
+    "DEP_ESTADUAL": [
+      { "numero": "13123", "nome": "CANDIDATO ESTADUAL 1", "partido": "PT" },
+      { "numero": "22123", "nome": "CANDIDATO ESTADUAL 2", "partido": "PL" }
+    ],
+    "SENADOR_1": [
+      { "numero": "131", "nome": "CANDIDATO A SENADO", "partido": "PT", "suplentes": ["SUPLENTE 1A", "SUPLENTE 1B"] },
+      { "numero": "222", "nome": "CANDIDATO B SENADO", "partido": "PL", "suplentes": ["SUPLENTE 2A", "SUPLENTE 2B"] }
+    ],
+    "SENADOR_2": [
+      { "numero": "132", "nome": "CANDIDATO C SENADO", "partido": "PT", "suplentes": ["SUPLENTE 3A", "SUPLENTE 3B"] },
+      { "numero": "223", "nome": "CANDIDATO D SENADO", "partido": "PL", "suplentes": ["SUPLENTE 4A", "SUPLENTE 4B"] }
+    ],
+    "GOVERNADOR": [
+      { "numero": "13", "nome": "CANDIDATO A GOVERNADOR", "partido": "PT", "vice": "VICE GOVERNADOR 1" },
+      { "numero": "22", "nome": "CANDIDATO B GOVERNADOR", "partido": "PL", "vice": "VICE GOVERNADOR 2" }
+    ],
+    "PRESIDENTE": [
+      { "numero": "13", "nome": "CANDIDATO A PRESIDENTE", "partido": "PT", "vice": "VICE PRESIDENTE 1" },
+      { "numero": "22", "nome": "CANDIDATO B PRESIDENTE", "partido": "PL", "vice": "VICE PRESIDENTE 2" }
+    ]
+  }
+}

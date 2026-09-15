@@ -35,11 +35,9 @@ MAPEAMENTO_CARGOS = {
     "SENADOR": "SENADOR",
     "GOVERNADOR": "GOVERNADOR",
     "PRESIDENTE": "PRESIDENTE",
-    "PREFEITO": "PREFEITO",
-    "VEREADOR": "VEREADOR",
 }
 
-# Situações mais amplas para capturar candidatos em fase de registro
+# Situações mais amplas
 SITUACOES_VALIDAS = [
     "DEFERIDO", 
     "INDEFERIDO COM RECURSO", 
@@ -47,7 +45,9 @@ SITUACOES_VALIDAS = [
     "AGUARDANDO JULGAMENTO",
     "REGISTRO",
     "APTO",
-    "REGISTRADO"
+    "REGISTRADO",
+    "APTOS",
+    "DEFERIDOS"
 ]
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -60,7 +60,6 @@ def detectar_ano_mais_recente() -> str:
     """Detecta automaticamente o ano eleitoral mais recente disponível."""
     ano_atual = datetime.now().year
     
-    # Tenta anos a partir do atual, descendo
     for ano in range(ano_atual, ano_atual - 10, -1):
         url_teste = f"{URL_BASE_TSE}/eleicoes{ano}/candidatos{ano}/consulta_cand_{ano}_SP.zip"
         try:
@@ -76,10 +75,12 @@ def detectar_ano_mais_recente() -> str:
 
 
 def detectar_tipo_eleicao(ano: str) -> str:
-    """Detecta se é eleição geral ou municipal."""
+    """
+    Detecta se é eleição geral ou municipal.
+    Eleições municipais: 2020, 2024, 2028... (ano % 4 == 0)
+    Eleições gerais: 2022, 2026, 2030... (ano % 4 == 2)
+    """
     ano_int = int(ano)
-    # Eleições municipais: 2020, 2024, 2028... (ano % 4 == 0)
-    # Eleições gerais: 2022, 2026, 2030... (ano % 4 == 2)
     if ano_int % 4 == 0:
         return "Eleições Municipais"
     else:
@@ -175,13 +176,23 @@ def processar_uf(uf: str, ano: str) -> dict:
     csv_path.unlink(missing_ok=True)
     
     if not candidatos_raw:
+        logger.warning(f"{uf}: Nenhum candidato encontrado no CSV.")
         return {}
     
-    # Log para debug: mostrar quais situações existem
-    situacoes_encontradas = set()
-    for c in candidatos_raw:
-        situacoes_encontradas.add(c.get("DS_SITUACAO_CANDIDATURA", "").upper())
-    logger.info(f"{uf}: Situações encontradas: {situacoes_encontradas}")
+    # DEBUG: Mostrar primeiras linhas e situações
+    logger.info(f"{uf}: Total de candidatos no CSV: {len(candidatos_raw)}")
+    if candidatos_raw:
+        logger.info(f"{uf}: Exemplo de candidato: {candidatos_raw[0]}")
+        
+        situacoes_encontradas = set()
+        for c in candidatos_raw:
+            situacoes_encontradas.add(c.get("DS_SITUACAO_CANDIDATURA", "").upper())
+        logger.info(f"{uf}: Situações encontradas: {situacoes_encontradas}")
+        
+        cargos_encontrados = set()
+        for c in candidatos_raw:
+            cargos_encontrados.add(c.get("DS_CARGO", "").upper())
+        logger.info(f"{uf}: Cargos encontrados: {cargos_encontrados}")
     
     candidatos_validos = [
         c for c in candidatos_raw
@@ -190,7 +201,7 @@ def processar_uf(uf: str, ano: str) -> dict:
     logger.info(f"{uf}: {len(candidatos_validos)} candidatos válidos de {len(candidatos_raw)} totais.")
     
     if len(candidatos_validos) == 0:
-        logger.warning(f"{uf}: Nenhum candidato válido encontrado. Usando todos os candidatos.")
+        logger.warning(f"{uf}: Nenhum candidato válido. Usando todos.")
         candidatos_validos = candidatos_raw
     
     agrupados = defaultdict(lambda: defaultdict(list))
@@ -249,7 +260,7 @@ def processar_uf(uf: str, ano: str) -> dict:
                     "partido": titular.get("SG_PARTIDO", "")
                 }
                 
-                if cargo_tse in ["GOVERNADOR", "PRESIDENTE", "PREFEITO"] and dados_chapa["complementares"]:
+                if cargo_tse in ["GOVERNADOR", "PRESIDENTE"] and dados_chapa["complementares"]:
                     registro["vice"] = dados_chapa["complementares"][0].get("NM_URNA_CANDIDATO", "")
                 
                 lista_cargos.append(registro)

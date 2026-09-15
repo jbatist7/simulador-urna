@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador Educacional de Votação</title>
+    <style>
+        :root {
+            --urna-bg: #000000;
+            --urna-text: #ffffff;
+            --urna-yellow: #ffcc00;
+            --btn-num: #333333;
+            --btn-branco: #000000;
+            --btn-corrige: #e67e22;
+            --btn-confirma: #27ae60;
+        }
+
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #1a1a1a;
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 400px;
+            background: #000;
+            border: 10px solid #222;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .ui-screen {
+            background: #2c3e50;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .ui-screen h2 { color: var(--urna-yellow); margin-top: 0; }
+        .ui-screen button {
+            background: var(--btn-confirma);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-weight: bold;
+        }
+        .ui-screen select, .ui-screen input {
+            padding: 10px;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 80%;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        .urna-screen {
+            background: var(--urna-bg);
+            color: var(--urna-text);
+            min-height: 400px;
+            padding: 20px;
+            border: 2px solid #444;
+            display: none;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .urna-display {
+            border: 1px solid #555;
+            padding: 15px;
+            min-height: 200px;
+            font-size: 18px;
+            line-height: 1.5;
+        }
+        .urna-display .cargo { font-size: 24px; font-weight: bold; text-transform: uppercase; }
+        .urna-display .numero { font-size: 40px; color: var(--urna-yellow); letter-spacing: 5px; min-height: 50px;}
+        .urna-display .info-cand { margin-top: 15px; font-size: 16px; }
+
+        .urna-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .key {
+            padding: 15px;
+            font-size: 20px;
+            font-weight: bold;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            color: white;
+            transition: transform 0.1s;
+        }
+        .key:active { transform: scale(0.95); }
+        .key-num { background: var(--btn-num); color: white; }
+        .key-branco { background: var(--btn-branco); border: 1px solid #555; grid-column: span 1; }
+        .key-corrige { background: var(--btn-corrige); }
+        .key-confirma { background: var(--btn-confirma); }
+
+        .hidden { display: none !important; }
+        
+        .disclaimer {
+            font-size: 10px;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <!-- TELA 1: SELEÇÃO E PREPARAÇÃO -->
+    <div id="screen-prep" class="ui-screen">
+        <h2>SIMULADOR EDUCACIONAL</h2>
+        <p id="info-eleicao">Carregando informações...</p>
+        <p>Antes de iniciar, consulte os números dos seus candidatos.</p>
+        
+        <label>Selecione seu Estado:</label>
+        <select id="select-uf">
+            <option value="SP">São Paulo (SP)</option>
+            <option value="RJ">Rio de Janeiro (RJ)</option>
+            <option value="MG">Minas Gerais (MG)</option>
+            <option value="BA">Bahia (BA)</option>
+            <option value="RS">Rio Grande do Sul (RS)</option>
+            <option value="PR">Paraná (PR)</option>
+            <option value="PE">Pernambuco (PE)</option>
+            <option value="CE">Ceará (CE)</option>
+            <option value="PA">Pará (PA)</option>
+            <option value="MA">Maranhão (MA)</option>
+            <option value="SC">Santa Catarina (SC)</option>
+            <option value="GO">Goiás (GO)</option>
+            <option value="AM">Amazonas (AM)</option>
+            <option value="ES">Espírito Santo (ES)</option>
+            <option value="PB">Paraíba (PB)</option>
+            <option value="RN">Rio Grande do Norte (RN)</option>
+            <option value="MT">Mato Grosso (MT)</option>
+            <option value="PI">Piauí (PI)</option>
+            <option value="DF">Distrito Federal (DF)</option>
+            <option value="MS">Mato Grosso do Sul (MS)</option>
+            <option value="SE">Sergipe (SE)</option>
+            <option value="AL">Alagoas (AL)</option>
+            <option value="TO">Tocantins (TO)</option>
+            <option value="RO">Rondônia (RO)</option>
+            <option value="AC">Acre (AC)</option>
+            <option value="AP">Amapá (AP)</option>
+            <option value="RR">Roraima (RR)</option>
+        </select>
+
+        <div id="cola-candidatos" style="text-align: left; background: #34495e; padding: 15px; border-radius: 5px; margin-top: 15px; font-size: 14px; max-height: 300px; overflow-y: auto;">
+            Carregando dados...
+        </div>
+
+        <button onclick="iniciarVotacao()">ENTRAR NA CABINE DE VOTAÇÃO</button>
+        <p class="disclaimer">Aplicativo independente para fins educativos. Dados oficiais do TSE.</p>
+    </div>
+
+    <!-- TELA 2: A URNA -->
+    <div id="screen-urna" class="urna-screen">
+        <div class="urna-display" id="urna-display">
+        </div>
+        <div class="urna-keypad">
+            <button class="key key-num" onclick="digitar('1')">1</button>
+            <button class="key key-num" onclick="digitar('2')">2</button>
+            <button class="key key-num" onclick="digitar('3')">3</button>
+            <button class="key key-num" onclick="digitar('4')">4</button>
+            <button class="key key-num" onclick="digitar('5')">5</button>
+            <button class="key key-num" onclick="digitar('6')">6</button>
+            <button class="key key-num" onclick="digitar('7')">7</button>
+            <button class="key key-num" onclick="digitar('8')">8</button>
+            <button class="key key-num" onclick="digitar('9')">9</button>
+            <button class="key key-branco" onclick="votarBranco()">BRANCO</button>
+            <button class="key key-num" onclick="digitar('0')">0</button>
+            <button class="key key-corrige" onclick="corrigir()">CORRIGE</button>
+            <button class="key key-confirma" style="grid-column: span 3;" onclick="confirmar()">CONFIRMA</button>
+        </div>
+    </div>
+
+    <!-- TELA 3: FIM E OBSERVATÓRIO -->
+    <div id="screen-fim" class="ui-screen hidden">
+        <h2>FIM</h2>
+        <p style="font-size: 24px; color: var(--urna-yellow);">SEU VOTO FOI COMPUTADO</p>
+        <p>Obrigado por treinar sua votação!</p>
+        
+        <div id="resumo-educativo" style="text-align: left; background: #34495e; padding: 15px; border-radius: 5px; margin: 20px 0; font-size: 14px;">
+        </div>
+
+        <button onclick="location.reload()">VOTAR NOVAMENTE</button>
+        <button onclick="alert('Aqui abriria o módulo do Observatório de Propostas')" style="background: #2980b9;">VERIFICAR PROPOSTAS (OBSERVATÓRIO)</button>
+    </div>
+</div>
+
+<script>
+    let dadosTSE = {};
+
+    async function carregarDadosTSE() {
+        try {
+            const resposta = await fetch('dados/dados.json');
+            if (!resposta.ok) throw new Error('Erro ao carregar dados');
+            dadosTSE = await resposta.json();
+            
+            // Exibe informações da eleição (ano e tipo)
+            const info = dadosTSE.info || {};
+            const ano = info.ano || "";
+            const tipo = info.tipo || "Eleições";
+            document.getElementById('info-eleicao').innerText = `${tipo} ${ano}`.trim();
+            
+            console.log('Dados do TSE carregados com sucesso!');
+            atualizarCola();
+        } catch (erro) {
+            console.error('Erro ao carregar dados do TSE:', erro);
+            document.getElementById('cola-candidatos').innerHTML = "<em>Erro ao carregar dados. Verifique se o arquivo dados.json existe.</em>";
+            document.getElementById('info-eleicao').innerText = "Dados indisponíveis";
+        }
+    }
+
+    carregarDadosTSE();
+
+    let ufSelecionada = "SP";
+    let indiceCargo = 0;
+    let numeroDigitado = "";
+    let votosRegistrados = [];
+    let votoBrancoAtual = false;
+
+    const sequenciaCargos = [
+        { codigo: "DEP_FEDERAL", titulo: "DEPUTADO FEDERAL", digitos: 4 },
+        { codigo: "DEP_ESTADUAL", titulo: "DEPUTADO ESTADUAL", digitos: 5 },
+        { codigo: "SENADOR_1", titulo: "SENADOR (1ª VAGA)", digitos: 3 },
+        { codigo: "SENADOR_2", titulo: "SENADOR (2ª VAGA)", digitos: 3 },
+        { codigo: "GOVERNADOR", titulo: "GOVERNADOR", digitos: 2 },
+        { codigo: "PRESIDENTE", titulo: "PRESIDENTE", digitos: 2 }
+    ];
+
+    let audioCtx;
+    function tocarBip() {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.frequency.value = 880;
+        osc.type = 'sine';
+        
+        const now = audioCtx.currentTime;
+        const duration = 0.12;
+        
+        gain.gain.setValueAtTime(0, now);
+        gain.gain.linearRampToValueAtTime(0.3, now + 0.008);
+        gain.gain.linearRampToValueAtTime(0, now + duration);
+        
+        osc.start(now);
+        osc.stop(now + duration);
+    }
+
+    function iniciarVotacao() {
+        ufSelecionada = document.getElementById('select-uf').value;
+        document.getElementById('screen-prep').classList.add('hidden');
+        document.getElementById('screen-urna').style.display = 'flex';
+        renderizarTelaCargo();
+    }
+
+    function renderizarTelaCargo() {
+        votoBrancoAtual = false;
+        numeroDigitado = "";
+        const cargo = sequenciaCargos[indiceCargo];
+        
+        let html = `<div class="cargo">${cargo.titulo}</div>`;
+        html += `<div class="numero" id="display-numero">_ _ _ _ _</div>`;
+        html += `<div class="info-cand" id="info-cand"></div>`;
+        
+        document.getElementById('urna-display').innerHTML = html;
+        atualizarDisplayNumeros();
+    }
+
+    function atualizarDisplayNumeros() {
+        const cargo = sequenciaCargos[indiceCargo];
+        let display = "";
+        for (let i = 0; i < cargo.digitos; i++) {
+            display += (numeroDigitado[i] || "_") + " ";
+        }
+        document.getElementById('display-numero').innerText = display.trim();
+    }
+
+    function digitar(num) {
+        tocarBip();
+        const cargo = sequenciaCargos[indiceCargo];
+        if (numeroDigitado.length < cargo.digitos) {
+            numeroDigitado += num;
+            atualizarDisplayNumeros();
+            
+            if (numeroDigitado.length === cargo.digitos) {
+                buscarCandidato();
+            }
+        }
+    }
+
+    function buscarCandidato() {
+        const cargo = sequenciaCargos[indiceCargo];
+        const candidatos = dadosTSE[ufSelecionada]?.[cargo.codigo] || [];
+        const encontrado = candidatos.find(c => c.numero === numeroDigitado);
+        
+        let infoHtml = "";
+        if (encontrado) {
+            infoHtml += `<p><strong>${encontrado.nome}</strong></p>`;
+            if (encontrado.vice) infoHtml += `<p>Vice: ${encontrado.vice}</p>`;
+            if (encontrado.suplentes) infoHtml += `<p>Suplentes: ${encontrado.suplentes.join(', ')}</p>`;
+            infoHtml += `<p>Partido: ${encontrado.partido}</p>`;
+        } else {
+            infoHtml = `<p style="color: red; font-weight: bold;">VOTO NULO</p>`;
+        }
+        document.getElementById('info-cand').innerHTML = infoHtml;
+    }
+
+    function votarBranco() {
+        tocarBip();
+        votoBrancoAtual = true;
+        numeroDigitado = "";
+        document.getElementById('urna-display').innerHTML = `
+            <div class="cargo">${sequenciaCargos[indiceCargo].titulo}</div>
+            <div style="text-align: center; margin-top: 50px; font-size: 24px; color: white;">VOTO EM BRANCO</div>
+        `;
+    }
+
+    function corrigir() {
+        tocarBip();
+        numeroDigitado = "";
+        votoBrancoAtual = false;
+        renderizarTelaCargo();
+    }
+
+    function confirmar() {
+        tocarBip();
+        
+        let voto = { cargo: sequenciaCargos[indiceCargo].titulo, tipo: "NULO" };
+        if (votoBrancoAtual) voto.tipo = "BRANCO";
+        else if (document.getElementById('info-cand').innerText.includes("NULO")) voto.tipo = "NULO";
+        else voto.tipo = "VÁLIDO";
+        
+        votosRegistrados.push(voto);
+
+        indiceCargo++;
+        if (indiceCargo < sequenciaCargos.length) {
+            renderizarTelaCargo();
+        } else {
+            finalizarVotacao();
+        }
+    }
+
+    function finalizarVotacao() {
+        document.getElementById('screen-urna').style.display = 'none';
+        document.getElementById('screen-fim').classList.remove('hidden');
+        
+        let resumo = "<h3>Resumo da sua simulação:</h3><ul>";
+        votosRegistrados.forEach(v => {
+            resumo += `<li><strong>${v.cargo}:</strong> ${v.tipo}</li>`;
+        });
+        resumo += "</ul>";
+        resumo += "<p><em>Na vida real, o sistema proporcional (Deputados) e majoritário (Senador, Gov, Pres) calculam os eleitos de formas diferentes. Entenda mais no Observatório.</em></p>";
+        
+        document.getElementById('resumo-educativo').innerHTML = resumo;
+    }
+
+    function atualizarCola() {
+        const uf = document.getElementById('select-uf').value;
+        const dados = dadosTSE[uf];
+        
+        if (!dados) {
+            document.getElementById('cola-candidatos').innerHTML = "<em>Dados não disponíveis para esta UF.</em>";
+            return;
+        }
+        
+        let html = "";
+        for (const cargo in dados) {
+            if (cargo === "info") continue; // Pula metadados
+            html += `<strong>${cargo.replace('_', ' ')}:</strong><br>`;
+            dados[cargo].forEach(c => {
+                html += `&nbsp;&nbsp;${c.numero} - ${c.nome} (${c.partido})<br>`;
+            });
+            html += `<br>`;
+        }
+        document.getElementById('cola-candidatos').innerHTML = html;
+    }
+
+    document.getElementById('select-uf').addEventListener('change', atualizarCola);
+</script>
+</body>
+</html>
